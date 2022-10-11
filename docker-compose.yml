@@ -1,0 +1,61 @@
+version: "3"
+services:
+   app:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      container_name: glue-app
+      restart: unless-stopped
+      working_dir: /var/www/html/
+      volumes:
+         - ./:/var/www/html/
+         - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      networks:
+         - laravel-network
+
+   nginx:
+      image: nginx:alpine
+      container_name: glue-web
+      restart: unless-stopped
+      ports:
+         - "80:80"
+         - "443:443"
+      volumes:
+         - ./:/var/www/html/
+         - ./nginx/conf.d/:/etc/nginx/conf.d/ 
+      networks:
+         - laravel-network
+
+   dbserver:
+      image: mysql:8.0.30
+      container_name: glue-db
+      restart: unless-stopped
+      ports:
+         - "3306:3306"
+      volumes:
+         - dbdata:/var/lib/mysql/
+         - ./mysql/my.cnf:/etc/mysql/my.cnf
+      environment:
+         - MYSQL_ROOT_PASSWORD=root123
+         - MYSQL_DATABASE=gluedb
+      networks:
+         - laravel-network
+
+   redis:
+      image: redis:latest
+      container_name: glue-redis
+      volumes:
+         - ./data/redis:/data
+      ports:
+         - "6379:6379"
+      networks:
+         - laravel-network
+
+#Docker Networks
+networks:
+   laravel-network:
+      driver: bridge
+#Volumes
+volumes:
+   dbdata:
+      driver: local
